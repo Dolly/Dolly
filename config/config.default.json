@@ -1,0 +1,16 @@
+{
+
+	"networks": [
+		{
+			"host": "your-server",
+			"port": 6667,
+			"password": "",
+			"sasl": false,
+			"nick": "DollyBot",
+			"username": "DollyBot",
+			"realname": "DollyBot",
+			"channels": ["#dolly"]
+		}
+	],
+	"plugins": ["dolly/mime"]
+}
