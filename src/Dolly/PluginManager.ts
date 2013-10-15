@@ -2,6 +2,9 @@ export class PluginManager {
 
 	bot:any;
 
+	commandRegex:RegExp = new RegExp("^onCommand", "i");
+	eventRegex:RegExp = new RegExp("^on", "i");
+
 	constructor(bot:any) {
 		this.bot = bot;
 	}
@@ -15,15 +18,41 @@ export class PluginManager {
 		var pluginFile = require('../plugins/' + namespace + '/' + pluginConfig.mainFile);
 		self.bot.plugins[namespace] = new pluginFile[pluginConfig.mainFile](self.bot);
 
+		var hooks = this.findHooks(self.bot.plugins[namespace]);
+		var events = hooks['events'];
+		var commands = hooks['commands'];
 
-		['registered', 'motd', 'names', 'topic', 'join', 'part', 'quit', 'kick', 'kill', 'message', 'notice', 'ping', 'pm', 'ctcp', 'ctcpNotice', 'ctcpPrivmsg', 'ctcpVersion', 'nick', 'plusMode', 'minusMode', 'whois', 'channelistStart', 'channelistItem', 'channelList', 'raw', 'error'].forEach(function (event) {
-			var onEvent = 'on' + event.charAt(0).toUpperCase() + event.substr(1),
-				callback = self.bot.plugins[namespace][onEvent];
+		events.forEach(function(event) {
+			console.log('Events Loop: ' + event);
 
-			if (typeof callback == 'function') {
-				self.bot.PluginManager.addPluginEvent(self.bot, namespace, event, callback);
-			}
+			var callback = self.bot.plugins[namespace][event];
+			console.log(callback);
+
+			self.bot.PluginManager.addPluginEvent(self.bot, namespace, event, callback);
 		});
+
+		commands.forEach(function(command) {
+			console.log('Commands Loop: ' + command);
+
+			var callback = self.bot.plugins[namespace][command];
+			var event = command.replace('onCommand', '');
+
+			self.bot.PluginManager.addPluginEvent(self.bot, namespace, 'command.' + event, callback);
+		});
+	}
+
+	public unload(namespace:string) {
+		var bot = this.bot;
+
+		// Unregister our events
+		var hooks = bot.plugins[namespace]['hooks'];
+		for (var hook in hooks) {
+			if (hooks[hook].hasOwnProperty('event')) {
+				bot.client.removeListener(hooks[hook]['event'], hooks[hook]['callback']);
+
+				bot.log.info("Unregistered " + hooks[hook]['event'] + " hook for " + namespace);
+			}
+		}
 	}
 
 	private addPluginEvent(bot, plugin, ev, f) {
@@ -31,6 +60,9 @@ export class PluginManager {
 			bot.plugins[plugin]['hooks'] = [];
 		}
 
+		// Calls a function with a given this value and arguments
+		// provided as an array (or an array-like object). Also
+		// sets 'this' to the plugin's class.
 		var callback = (function () {
 			return function () {
 				f.apply(that, arguments);
@@ -39,8 +71,10 @@ export class PluginManager {
 
 		bot.plugins[plugin]['hooks'].push({event: ev, callback: callback});
 
+		// Add the event listener and make sure the callback knows about
+		// the plugins class.
 		var that = bot.plugins[plugin];
-		return bot.client.addListener(ev, callback);
+		return bot.events.addListener(ev, callback);
 	}
 
 	private loadConfiguration(namespace:string) {
@@ -62,6 +96,46 @@ export class PluginManager {
 		var end = namespace.split('/')[1];
 
 		return end.charAt(0).toUpperCase() + end.slice(1);
+	}
+
+	private explodeCommand(name:string):string {
+		var exploded = name.replace('onCommand', '');
+		var split = exploded.match(/[A-Z][a-z]+/g);
+
+		return split.join(' ');
+	}
+
+	private findHooks(Plugin:Plugin):Object {
+		var methods = this.getMethods(Plugin);
+		var hooks = {commands:[],events:[]};
+
+		methods.forEach((function(method) {
+			var isCommand = this.commandRegex.test(method);
+			var isEvent = this.eventRegex.test(method);
+
+			if(isCommand) {
+				hooks.commands.push(method);
+				console.log('Registered Command: ' + method);
+			} else if(isEvent && !isCommand) {
+				hooks.events.push(method);
+				console.log('Registered Event: ' + method);
+			} else {
+				console.log('Not matched: ' + method);
+			}
+
+		}).bind(this));
+
+		return hooks;
+	}
+
+	private getMethods(obj) {
+		var res = [];
+		for(var m in obj) {
+			if(typeof obj[m] == "function") {
+				res.push(m)
+			}
+		}
+		return res;
 	}
 
 

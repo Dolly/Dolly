@@ -12,6 +12,8 @@ import irc = require('irc');
 import PluginManager = require('PluginManager');
 import _ = require('underscore');
 import util = require('util');
+import os = require('os');
+import repl = require("repl");
 
 export class Bot {
 
@@ -39,14 +41,34 @@ export class Bot {
 		this.plugins = {};
 	}
 
+	private setupShell() {
+		var self = this;
+
+		process.title = 'Dolly Bot';
+
+		/*
+		repl.start({
+			prompt: "js> ",
+			useGlobal: true,
+			eval: function evalInput(cmd, context, filename, callback) {
+
+				var result = eval(cmd);
+
+				callback(null, result);
+			}
+		});
+		*/
+	}
+
 	public spawn() {
 		var config = this.config;
 		var network = this.config.networks[0];
 
+		this.setupShell();
+
 		this.client = new irc.Client(network.host, network.nick, network);
 
 		this.extendEvents(this.client);
-
 
 		if(config.plugins !== null || config.plugins !== []) {
 			config.plugins.forEach(function (p) {
@@ -55,15 +77,16 @@ export class Bot {
 		}
 
 		this.events.addListener('raw', function (raw) {
-			console.log(Math.round(new Date().getTime() / 1000) + ' ' + raw.rawCommand + ' ' + raw.args.join(' '));
+			process.stdout.write(Math.round(new Date().getTime() / 1000) + ' ' + raw.rawCommand + ' ' + raw.args.join(' ') + os.EOL);
 		});
 
 		/**
 		 * Sends errors to plugins and if debug show them
 		 */
 		this.client.addListener('error', function (message) {
-			console.warn(message);
+			//console.warn(message);
 		});
+
 	}
 
 	private extendEvents(client:any) {
@@ -76,8 +99,6 @@ export class Bot {
 		delete this.events['prefixForMode'];
 		delete this.events['modeForPrefix'];
 		delete this.events['_whoisData'];
-
-		console.log(this.events);
 	}
 
 }

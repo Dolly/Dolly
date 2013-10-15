@@ -1,6 +1,7 @@
 module.exports = function (grunt) {
 
 	grunt.initConfig({
+		pkg: grunt.file.readJSON('package.json'),
 		typescript: {
 			base: {
 				src: ['src/**/*.ts'],
@@ -26,13 +27,18 @@ module.exports = function (grunt) {
 					}
 				]
 			}
+		},
+		mochacli: {
+			test: 'tests/**/*_test.js'
 		}
 	});
 
-    grunt.loadNpmTasks('grunt-typescript');
+	grunt.loadNpmTasks('grunt-typescript');
 	grunt.loadNpmTasks('grunt-contrib-copy');
+	grunt.loadNpmTasks('grunt-mocha-cli');
 
 	// Default task(s).
-	grunt.registerTask('default', ['typescript','copy']);
+	grunt.registerTask('default', ['typescript', 'copy']);
+	grunt.registerTask('test', ['mochacli']);
 
 };
