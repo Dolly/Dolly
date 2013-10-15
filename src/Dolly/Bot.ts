@@ -19,8 +19,6 @@ export class Bot {
 
 	PluginManager:PluginManager.PluginManager;
 
-	events:events.EventEmitter;
-
 	configDir:string;
 
 	log:any;
@@ -35,7 +33,6 @@ export class Bot {
 	constructor() {
 		// Load Our Stuff
 		this.PluginManager = new PluginManager.PluginManager(this);
-		this.events = new events.EventEmitter();
 
 		this.config = require('../../config/config.json');
 		this.plugins = {};
@@ -68,15 +65,13 @@ export class Bot {
 
 		this.client = new irc.Client(network.host, network.nick, network);
 
-		this.extendEvents(this.client);
-
 		if(config.plugins !== null || config.plugins !== []) {
 			config.plugins.forEach(function (p) {
 				this.PluginManager.load(p);
 			}, this);
 		}
 
-		this.events.addListener('raw', function (raw) {
+		this.client.addListener('raw', function (raw) {
 			process.stdout.write(Math.round(new Date().getTime() / 1000) + ' ' + raw.rawCommand + ' ' + raw.args.join(' ') + os.EOL);
 		});
 
@@ -87,18 +82,6 @@ export class Bot {
 			//console.warn(message);
 		});
 
-	}
-
-	private extendEvents(client:any) {
-
-		_.extend(this.events, client);
-		delete this.events['opt'];
-		delete this.events['supported'];
-		delete this.events['chans'];
-		delete this.events['conn'];
-		delete this.events['prefixForMode'];
-		delete this.events['modeForPrefix'];
-		delete this.events['_whoisData'];
 	}
 
 }

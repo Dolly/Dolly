@@ -23,21 +23,18 @@ export class PluginManager {
 		var commands = hooks['commands'];
 
 		events.forEach(function(event) {
-			console.log('Events Loop: ' + event);
-
 			var callback = self.bot.plugins[namespace][event];
-			console.log(callback);
+			var eventName = event.replace('on', '');
+			eventName = eventName.charAt(0).toLowerCase() + eventName.slice(1);
 
-			self.bot.PluginManager.addPluginEvent(self.bot, namespace, event, callback);
+			self.addPluginEvent(namespace, eventName, callback);
 		});
 
 		commands.forEach(function(command) {
-			console.log('Commands Loop: ' + command);
-
 			var callback = self.bot.plugins[namespace][command];
 			var event = command.replace('onCommand', '');
 
-			self.bot.PluginManager.addPluginEvent(self.bot, namespace, 'command.' + event, callback);
+			self.addPluginEvent(namespace, 'command.' + event, callback);
 		});
 	}
 
@@ -55,7 +52,9 @@ export class PluginManager {
 		}
 	}
 
-	private addPluginEvent(bot, plugin, ev, f) {
+	private addPluginEvent(plugin, ev, f) {
+		var bot = this.bot;
+
 		if (typeof bot.plugins[plugin]['hooks'] == 'undefined') {
 			bot.plugins[plugin]['hooks'] = [];
 		}
@@ -74,7 +73,7 @@ export class PluginManager {
 		// Add the event listener and make sure the callback knows about
 		// the plugins class.
 		var that = bot.plugins[plugin];
-		return bot.events.addListener(ev, callback);
+		return bot.client.addListener(ev, callback);
 	}
 
 	private loadConfiguration(namespace:string) {
@@ -96,13 +95,6 @@ export class PluginManager {
 		var end = namespace.split('/')[1];
 
 		return end.charAt(0).toUpperCase() + end.slice(1);
-	}
-
-	private explodeCommand(name:string):string {
-		var exploded = name.replace('onCommand', '');
-		var split = exploded.match(/[A-Z][a-z]+/g);
-
-		return split.join(' ');
 	}
 
 	private findHooks(Plugin:Plugin):Object {
