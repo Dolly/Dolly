@@ -36,7 +36,7 @@ export class Bot {
 		this.events = new events.EventEmitter();
 
 		this.config = require('../../config/config.json');
-		this.plugins = this.config.plugins;
+		this.plugins = {};
 	}
 
 	public spawn() {

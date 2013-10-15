@@ -7,12 +7,30 @@ export class Plugin {
 		this.bot = bot;
 	}
 
-	public privmsg() {
+	public reply(from, to, reply, type = 'privmsg') {
+		var client = this.bot.client;
 
+		switch (type) {
+			case 'privmsg':
+				if (to.charAt(0) == '#') {
+					client.say(to, from + ': ' + reply);
+				} else {
+					client.say(from, reply);
+				}
+				break;
+
+			case 'notice':
+				client.notice(from, reply);
+				break;
+		}
 	}
 
-    public notice() {
+	public privmsg(to:string, message:string) {
+		this.bot.client.say(to, message);
+	}
 
-    }
+	public notice(to:string, message:string) {
+		
+	}
 
 }
