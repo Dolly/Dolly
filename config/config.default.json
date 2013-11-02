@@ -2,14 +2,32 @@
 
 	"networks": [
 		{
-			"host": "your-server",
-			"port": 6667,
-			"password": "",
-			"sasl": false,
-			"nick": "DollyBot",
-			"username": "DollyBot",
-			"realname": "DollyBot",
-			"channels": ["#dolly"]
+            "host": "your-server",
+            "port": 6667,
+            "password": "",
+            "sasl": false,
+            "nick": "dolly",
+            "userName": "dolly",
+            "realName": "Dolly, the IRC bot.",
+
+            "channels": ["#dolly"],
+            "controllers": ["clone1018","Risugami","Shockah"]
+
+            "debug": true,
+            "showErrors": false,
+            "autoRejoin": true,
+            "autoConnect": true,
+
+            "secure": false,
+            "selfSigned": false,
+            "certExpired": false,
+
+            "floodProtection": false,
+            "floodProtectionDelay": 1000,
+
+            "stripColors": false,
+            "channelPrefixes": "&#",
+            "messageSplit": 510
 		}
 	],
 	"plugins": ["dolly/mime"]

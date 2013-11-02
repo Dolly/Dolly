@@ -25,6 +25,7 @@ export class Bot {
 	chatLog:any;
 
 	config:any;
+    network: any;
 	plugins:any;
 	hooks:any;
 	database:any;
@@ -35,6 +36,7 @@ export class Bot {
 		this.PluginManager = new PluginManager.PluginManager(this);
 
 		this.config = require('../../config/config.json');
+        this.network = {};
 		this.plugins = {};
 	}
 
@@ -58,21 +60,48 @@ export class Bot {
 	}
 
 	public spawn() {
-		var config = this.config;
-		var network = this.config.networks[0];
+		var self = this;
+		this.network = this.config.networks[0];
+
 
 		this.setupShell();
 
-		this.client = new irc.Client(network.host, network.nick, network);
+		this.client = new irc.Client(this.network.host, this.network.nick, this.network);
 
-		if(config.plugins !== null || config.plugins !== []) {
-			config.plugins.forEach(function (p) {
+		if(self.config.plugins !== null || self.config.plugins !== []) {
+			self.config.plugins.forEach(function (p) {
 				this.PluginManager.load(p);
 			}, this);
 		}
 
 		this.client.addListener('raw', function (raw) {
-			process.stdout.write(Math.round(new Date().getTime() / 1000) + ' ' + raw.rawCommand + ' ' + raw.args.join(' ') + os.EOL);
+			util.log('RECV: ' + raw.rawCommand + ' ' + raw.args.join(' '));
+		});
+
+        // Command handler
+		this.client.addListener('message', function(nick, to, text, message) {
+			if(text[0] === '.') {
+
+				var matches = [];
+
+				// Check all loaded plugins
+				for(var key in self.plugins) {
+
+					// And all of their registered commands
+					for(var command in self.plugins[key].commands) {
+						var commandName = '.' + command;
+
+						if (text.substring(0, commandName.length) == commandName) {
+							matches.push(commandName);
+						}
+					}
+				}
+
+                var longest = matches.sort(function (a, b) { return b.length - a.length; })[0];
+                self.client.whois(nick, function(whois) {
+                    self.client.emit('command' + longest, whois, to, text, message);
+                });
+			}
 		});
 
 		/**

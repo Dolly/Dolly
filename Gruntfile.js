@@ -2,6 +2,15 @@ module.exports = function (grunt) {
 
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
+        watch: {
+            scripts: {
+                files: ['src/**/*.ts'],
+                tasks: ['typescript', 'copy'],
+                options: {
+                    spawn: false
+                }
+            }
+        },
 		typescript: {
 			base: {
 				src: ['src/**/*.ts'],
@@ -33,6 +42,7 @@ module.exports = function (grunt) {
 		}
 	});
 
+    grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-typescript');
 	grunt.loadNpmTasks('grunt-contrib-copy');
 	grunt.loadNpmTasks('grunt-mocha-cli');

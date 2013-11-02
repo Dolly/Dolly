@@ -12,15 +12,23 @@ export class PluginManager {
 	public load(namespace:string) {
 		var self = this;
 
-		console.info('Loading Plugin: ' + namespace);
-
 		var pluginConfig = this.loadConfiguration(namespace);
 		var pluginFile = require('../plugins/' + namespace + '/' + pluginConfig.mainFile);
 		self.bot.plugins[namespace] = new pluginFile[pluginConfig.mainFile](self.bot);
 
 		var hooks = this.findHooks(self.bot.plugins[namespace]);
 		var events = hooks['events'];
-		var commands = hooks['commands'];
+
+		if(typeof(self.bot.plugins[namespace].commands) !== 'undefined') {
+			var commands = self.bot.plugins[namespace].commands;
+
+			for(var key in commands) {
+				var cb = commands[key];
+				var callback = self.bot.plugins[namespace][cb];
+
+				self.addPluginEvent(namespace, 'command.' + key, callback);
+			}
+		}
 
 		events.forEach(function(event) {
 			var callback = self.bot.plugins[namespace][event];
@@ -30,12 +38,15 @@ export class PluginManager {
 			self.addPluginEvent(namespace, eventName, callback);
 		});
 
+
+		/*
 		commands.forEach(function(command) {
 			var callback = self.bot.plugins[namespace][command];
 			var event = command.replace('onCommand', '');
 
 			self.addPluginEvent(namespace, 'command.' + event, callback);
 		});
+		*/
 	}
 
 	public unload(namespace:string) {
@@ -106,13 +117,10 @@ export class PluginManager {
 			var isEvent = this.eventRegex.test(method);
 
 			if(isCommand) {
-				hooks.commands.push(method);
-				console.log('Registered Command: ' + method);
+				//hooks.commands.push(method);
 			} else if(isEvent && !isCommand) {
 				hooks.events.push(method);
-				console.log('Registered Event: ' + method);
 			} else {
-				console.log('Not matched: ' + method);
 			}
 
 		}).bind(this));
